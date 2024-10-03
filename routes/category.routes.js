@@ -9,7 +9,7 @@ import {
 } from "../controllers/category.controller.js";
 const router = express.Router();
 
-router.get("/", isLoggedIn, getCategory);
+router.get("/", isLoggedIn, getCategory); 
 router.post("/", isLoggedIn, createCategory);
 router.get("/:id", isLoggedIn, getSingleCategory);
 router.put("/:id", isLoggedIn, updateCategory);

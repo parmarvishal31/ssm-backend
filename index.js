@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import connectDb from "./db/db.js";
 import userRoute from "./routes/user.routes.js";
 import categoryRoute from "./routes/category.routes.js";
+import qrRoute from "./routes/qr.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 
 // ENV
@@ -34,6 +35,7 @@ app.use(cors());
 // routes
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/category", categoryRoute);
+app.use('/api/v1/qr' , qrRoute)
 app.all("*", (req, res) => {
   res.status(404).send("OOPS!! 404 Not Found");
 });
