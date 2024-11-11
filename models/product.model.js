@@ -9,7 +9,7 @@ const productSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    tag: {
+    description: {
       type: String,
     },
     status: {
