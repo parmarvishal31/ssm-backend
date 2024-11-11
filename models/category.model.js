@@ -16,6 +16,14 @@ const categorySchema = new Schema(
       type: Boolean,
       default: false,
     },
+    img: {
+      public_id: {
+        type: String,
+      },
+      secure_url: {
+        type: String,
+      },
+    },
     total: {
       type: Number,
       default: 0,

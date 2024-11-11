@@ -1,5 +1,8 @@
 import Category from "../models/category.model.js";
 
+import cloudinary from "cloudinary";
+import fs from "fs/promises";
+
 const createCategory = async (req, res) => {
   const { name, ...otherFields } = req.body;
 
@@ -21,9 +24,31 @@ const createCategory = async (req, res) => {
         .json({ message: "Failed to create category, please try again" });
     }
 
+    if (req.file) {
+      try {
+        const result = await cloudinary.v2.uploader.upload(req.file.path, {
+          folder: "cms",
+          width: 250,
+          height: 250,
+          gravity: "faces",
+          crop: "fill",
+        });
+        if (result) {
+          category.img.public_id = result.public_id;
+          category.img.secure_url = result.secure_url;
+
+          fs.rm(`uploads/${req.file.filename}`);
+        }
+      } catch (error) {
+        return res.status(400).json({
+          message: error.message || "File not uploaded, please try again",
+        });
+      }
+    }
+
     // Save the new category and respond with success
     await category.save();
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Category created successfully",
       category,
@@ -38,7 +63,7 @@ const createCategory = async (req, res) => {
 const getCategory = async (req, res) => {
   const search = req.query.q;
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || 20;
   try {
     let query = {};
     if (search) {
@@ -103,6 +128,37 @@ const updateCategory = async (req, res) => {
     category.name = name || category.name;
     Object.assign(category, otherFields);
 
+    if (req.file) {
+      try {
+        // Delete the old image from Cloudinary if it exists
+        if (category.img.public_id) {
+          await cloudinary.v2.uploader.destroy(category.img.public_id);
+        }
+
+        // Upload the new image to Cloudinary
+        const result = await cloudinary.v2.uploader.upload(req.file.path, {
+          folder: "cms",
+          width: 250,
+          height: 250,
+          gravity: "faces",
+          crop: "fill",
+        });
+
+        if (result) {
+          // Update the image details in the category
+          category.img.public_id = result.public_id;
+          category.img.secure_url = result.secure_url;
+
+          // Remove the uploaded file from local storage
+          fs.rm(`uploads/${req.file.filename}`);
+        }
+      } catch (error) {
+        return res.status(400).json({
+          message: error.message || "File not uploaded, please try again",
+        });
+      }
+    }
+
     // Save the updated category
     await category.save();
 
@@ -121,15 +177,24 @@ const deleteCategory = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const category = await Category.findByIdAndDelete(id);
+    // Find the category by ID to get the public_id of the image
+    const category = await Category.findById(id);
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
 
+    // Delete the image from Cloudinary if it exists
+    if (category.img && category.img.public_id) {
+      await cloudinary.v2.uploader.destroy(category.img.public_id);
+    }
+
+    // Delete the category from the database
+    await Category.findByIdAndDelete(id);
+
     res.status(200).json({
       success: true,
-      message: "Category deleted successfully",
+      message: "Category and associated image deleted successfully",
     });
   } catch (error) {
     console.error(error);

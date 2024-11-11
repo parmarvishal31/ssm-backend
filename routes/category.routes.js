@@ -7,12 +7,13 @@ import {
   getSingleCategory,
   updateCategory,
 } from "../controllers/category.controller.js";
+import upload from "../middlewares/multer.middleware.js";
 const router = express.Router();
 
-router.get("/", isLoggedIn, getCategory); 
-router.post("/", isLoggedIn, createCategory);
+router.get("/", getCategory);
+router.post("/", isLoggedIn, upload.single("img"), createCategory);
 router.get("/:id", isLoggedIn, getSingleCategory);
-router.put("/:id", isLoggedIn, updateCategory);
+router.put("/:id", isLoggedIn, upload.single("img"), updateCategory);
 router.delete("/:id", isLoggedIn, deleteCategory);
 
 export default router;

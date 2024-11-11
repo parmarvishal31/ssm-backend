@@ -72,7 +72,7 @@ const register = async (req, res, next) => {
       success: true,
       message: "User registered successfully",
       user,
-      token
+      token,
     });
   } catch (error) {
     return next(new AppError(error.message || "Somthin went wrong!", 500));
@@ -81,6 +81,7 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   const { email, password } = req.body;
+
   try {
     if (!email || !password)
       return next(new AppError("Email and Password are required", 400));

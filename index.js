@@ -8,6 +8,7 @@ import userRoute from "./routes/user.routes.js";
 import categoryRoute from "./routes/category.routes.js";
 import qrRoute from "./routes/qr.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
+import { v2 } from "cloudinary";
 
 // ENV
 dotenv.config();
@@ -20,12 +21,12 @@ const app = express();
 // Database
 connectDb();
 
-// cloud
-// v2.config({
-//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-//   api_key: process.env.CLOUDINARY_API_KEY,
-//   api_secret: process.env.CLOUDINARY_API_SECRET,
-// });
+// cloud;
+v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // middlewares
 app.use(express.json());
@@ -35,7 +36,7 @@ app.use(cors());
 // routes
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/category", categoryRoute);
-app.use('/api/v1/qr' , qrRoute)
+app.use("/api/v1/qr", qrRoute);
 app.all("*", (req, res) => {
   res.status(404).send("OOPS!! 404 Not Found");
 });

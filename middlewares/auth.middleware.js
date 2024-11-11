@@ -16,7 +16,6 @@ const isLoggedIn = async (req, res, next) => {
 const authorizeRoles =
   (...roles) =>
   async (req, res, next) => {
-    console.log(req.user.role);
     const currentUserRole = req.user.role;
     if (!roles.includes(currentUserRole)) {
       return next(
