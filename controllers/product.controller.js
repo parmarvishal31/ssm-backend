@@ -5,7 +5,8 @@ import fs from "fs/promises";
 import Product from "../models/product.model.js";
 
 const createProduct = async (req, res) => {
-  const { name, ...otherFields } = req.body;
+  const { name, max, ...otherFields } = req.body;
+  console.log("otherFields: ", otherFields);
   try {
     const productExist = await Product.findOne({ name });
 
@@ -15,6 +16,7 @@ const createProduct = async (req, res) => {
 
     const product = await Product.create({
       name,
+      max: max ?? 0,
       ...otherFields,
     });
 
@@ -119,33 +121,44 @@ const getSingleProduct = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const { name, ...otherFields } = req.body;
-  const cid = req.body.category_id || "";
-
+  const { name, category_id, ...otherFields } = req.body;
   try {
     const product = await Product.findById(id);
-
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
+
     product.name = name || product.name;
     Object.assign(product, otherFields);
 
-    if (cid) {
-      const category = await Category.findById(cid);
+    if (category_id) {
+      const category = await Category.findById(category_id);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
-      } else {
+      }
+
+      if (product.category !== category_id) {
+        if (product.category) {
+          const existingCategory = await Category.findById(product.category);
+          if (existingCategory) {
+            existingCategory.products.pull(product._id);
+            await existingCategory.save();
+          }
+        }
         category.products.push(product._id);
+        product.category = category._id;
         await category.save();
       }
     }
 
     if (req.file) {
       try {
+        // Delete existing image if available
         if (product.img.public_id) {
           await cloudinary.v2.uploader.destroy(product.img.public_id);
         }
+
+        // Upload new image
         const result = await cloudinary.v2.uploader.upload(req.file.path, {
           folder: "cms",
           width: 250,
@@ -154,17 +167,23 @@ const updateProduct = async (req, res) => {
           crop: "fill",
         });
 
-        if (result) {
-          product.img.public_id = result.public_id;
-          product.img.secure_url = result.secure_url;
-          fs.rm(`uploads/${req.file.filename}`);
-        }
+        product.img = {
+          public_id: result.public_id,
+          secure_url: result.secure_url,
+        };
+
+        // Remove local file after upload
+        fs.rm(`uploads/${req.file.filename}`, { force: true }, (err) => {
+          if (err) console.error("Failed to delete local image:", err);
+        });
       } catch (error) {
         return res.status(400).json({
-          message: error.message || "File not uploaded, please try again",
+          message: "Image upload failed. Please try again.",
+          error: error.message,
         });
       }
     }
+
     await product.save();
 
     res.status(200).json({
@@ -173,8 +192,10 @@ const updateProduct = async (req, res) => {
       product,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Update category error!!" });
+    console.error("Update product error:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error during product update" });
   }
 };
 

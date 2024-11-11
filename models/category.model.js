@@ -29,7 +29,7 @@ const categorySchema = new Schema(
       default: 0,
     },
     max: {
-      type: Number,
+      type: String,
       default: 0,
     },
     products: [{ type: Schema.Types.ObjectId, ref: "Product" }],
