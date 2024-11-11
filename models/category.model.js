@@ -32,12 +32,7 @@ const categorySchema = new Schema(
       type: Number,
       default: 0,
     },
-    products: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Product",
-      },
-    ],
+    products: [{ type: Schema.Types.ObjectId, ref: "Product" }],
   },
   {
     timestamps: true,
